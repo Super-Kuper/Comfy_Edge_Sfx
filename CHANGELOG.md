@@ -4,6 +4,35 @@
 [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии —
 [SemVer](https://semver.org/lang/ru/).
 
+## [0.2.0] — 2026-11-17
+
+Релиз для публикации на RunPod Hub: метаданные листинга и build-тест, плюс
+health-проверка без графа и модели.
+
+### Добавлено
+
+- **RunPod Hub** (`.runpod/hub.json`, `.runpod/tests.json`): листинг (GPU-пул
+  `AMPERE_48,ADA_24`, CUDA 13.0–13.4, 40 GB container disk, env-переменные) и
+  build-тест `action=health`.
+- **Health** (`src/audio_worker/health.py`, contract §3): вход
+  `{"action": "health"}` → `{status, comfyui, volume_mounted}`. Проверяются
+  только наличие `VOLUME_ROOT` и короткий `GET /system_stats`; модель и граф не
+  загружаются, ошибки ComfyUI health не валят. Статусы
+  `ok`/`starting`/`degraded`, `comfyui` — `ready`/`booting`/`unavailable`.
+- **Клиент ComfyUI**: `system_stats()` (одиночный probe с таймаутом) и
+  `last_error` — причина последнего отказа для `booting`/`unavailable`.
+- **Схема входа** допускает `action: health` без `prompt`/`parameter`
+  (аддитивно в `audio-serverless/v1`); примеры `health.request.json`/
+  `health.response.json`, health-тесты и contract-тесты на health.
+- Версия `0.2.0` (pyproject, Dockerfile, `__version__`, Hub-метаданные);
+  README — раздел Health и шаг публикации через Hub.
+
+### Не менялось
+
+- Контракт генерации `audio-serverless/v1`, телеметрия, pinned-манифест и
+  ComfyUI-база. Живой entrypoint и проверка звукового стека — прежние
+  live-шаги (`TODO(live)`).
+
 ## [0.1.0] — 2026-11-17
 
 Первый релиз: контракт `audio-serverless/v1` (готовый ComfyUI-граф → аудиофайл
