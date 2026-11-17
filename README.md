@@ -40,10 +40,13 @@ be used at all — see the platform plan §4.3.
    Dockerfile builds on the pinned ComfyUI CUDA base — see
    [Dockerfile](Dockerfile). Do not bake weights into the image.
 4. **Publish on RunPod Hub (optional).** The Hub listing metadata is
-   [`.runpod/hub.json`](.runpod/hub.json) (GPU pool `AMPERE_48,ADA_24` — A6000/A40
-   48 GB primary, 4090 cheap fallback; CUDA 13.0–13.4; 40 GB container disk) and
+   [`.runpod/hub.json`](.runpod/hub.json) (GPU pools `AMPERE_48,AMPERE_24,ADA_24` —
+   A6000/A40 48 GB primary, 3090/4090 cheap fallback; host CUDA `13.2`/`13.0` —
+   the image is built on CUDA 13.0, so the host driver must be 13.0+; only
+   versions present in the RunPod inventory are listed, speculative `13.1`/
+   `13.3`/`13.4` never matched a machine; 40 GB container disk) and
    the build test is [`.runpod/tests.json`](.runpod/tests.json) — it runs the
-   health action.
+   health action on a stock-bearing NVIDIA RTX A6000 with CUDA 13.2.
 5. **Create the serverless endpoint** for the `audio` stand: endpoint type
    `QUEUE`, **`workers.max = 1`** (batch rule from the plan; a different value is
    stopped with `endpoint_workers_max`), idle timeout 60–120 s, FlashBoot,
