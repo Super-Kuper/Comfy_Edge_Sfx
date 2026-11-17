@@ -1,0 +1,87 @@
+{
+  "title": "Audio Serverless — Stable Audio 3.0 Small SFX / ACE-Step 1.5 (ComfyUI)",
+  "description": "ComfyUI serverless worker for the video_gen audio stand: SFX, layers and music. It executes a prepared ComfyUI API audio graph built by the video_gen audio_models catalog (it never builds, edits or selects the graph or the model) and returns the produced audio plus execution-fact telemetry (engine version, model hash, seed, duration, sample rate, channels, GPU seconds, license). Model weights come from a pinned manifest on the attached network volume (sha256 verified by populate-volume.sh); nothing is baked into the image.",
+  "type": "serverless",
+  "category": "audio",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 40,
+    "gpuCount": 1,
+    "gpuIds": "AMPERE_48,ADA_24",
+    "allowedCudaVersions": [
+      "13.0",
+      "13.1",
+      "13.2",
+      "13.3",
+      "13.4"
+    ],
+    "env": [
+      {
+        "key": "JOB_TIMEOUT_SECONDS",
+        "input": {
+          "name": "Job timeout (seconds)",
+          "type": "number",
+          "description": "Maximum time a single audio job may run before the worker aborts it. Must be less than or equal to the endpoint timeout (the audio-stand target is 900 s, 1200 s recommended).",
+          "min": 60,
+          "max": 3600,
+          "default": 900,
+          "advanced": true
+        }
+      },
+      {
+        "key": "HEALTH_TIMEOUT_SECONDS",
+        "input": {
+          "name": "Health probe timeout (seconds)",
+          "type": "number",
+          "description": "Timeout of the single GET /system_stats probe used by the health action.",
+          "min": 1,
+          "max": 120,
+          "default": 10,
+          "advanced": true
+        }
+      },
+      {
+        "key": "S3_ENDPOINT",
+        "input": {
+          "name": "S3 endpoint",
+          "type": "string",
+          "description": "Optional S3/MinIO endpoint. Configure S3_* to return large audio as a presigned audio_url instead of inline base64.",
+          "default": "",
+          "advanced": true
+        }
+      },
+      {
+        "key": "S3_ACCESS_KEY",
+        "input": {
+          "name": "S3 access key",
+          "type": "string",
+          "description": "S3/MinIO access key (secret — endpoint env only).",
+          "default": "",
+          "advanced": true
+        }
+      },
+      {
+        "key": "S3_SECRET_KEY",
+        "input": {
+          "name": "S3 secret key",
+          "type": "string",
+          "description": "S3/MinIO secret key (secret — endpoint env only).",
+          "default": "",
+          "advanced": true
+        }
+      },
+      {
+        "key": "S3_BUCKET",
+        "input": {
+          "name": "S3 bucket",
+          "type": "string",
+          "description": "Bucket for large audio output (alias: OUTPUT_BUCKET).",
+          "default": "",
+          "advanced": true
+        }
+      }
+    ]
+  },
+  "version": "v0.2.0",
+  "changelog": "## v0.2.0\n\n- RunPod Hub listing metadata (`.runpod/hub.json`) and the build test (`.runpod/tests.json`, `action=health`).\n- Health action (contract §3): `action: health` returns `{status, comfyui, volume_mounted}`; it only probes `VOLUME_ROOT` and a short `GET /system_stats` — no model load and no graph run. Statuses `ok`/`starting`/`degraded`; ComfyUI call failures never fail health.\n- Input schema allows `action: health` without `prompt`/`parameter` (additive within `audio-serverless/v1`); health contract examples and tests added.\n- Version `0.2.0` (package, Dockerfile, Hub metadata); README documents the health action and Hub publishing.\n- Unchanged: the generation contract `audio-serverless/v1`, telemetry facts, the pinned volume manifest and the ComfyUI base. The ComfyUI boot entrypoint and stand verification remain `TODO(live)`.\n\n## v0.1.0\n\n- Initial release: contract `audio-serverless/v1`, ComfyUI executor for Stable Audio 3.0 Small SFX and ACE-Step 1.5, pinned volume manifest + `populate-volume.sh`, 80 GPU-free tests.\n"
+}
