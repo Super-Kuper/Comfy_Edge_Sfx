@@ -10,11 +10,14 @@
   "properties": {
     "input": {
       "type": "object",
-      "required": [
-        "prompt",
-        "parameter"
-      ],
       "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "health"
+          ],
+          "description": "Health check without loading a model or running a graph; prompt and parameter are not required with this action (contract §3)."
+        },
         "prompt": {
           "type": "object",
           "minProperties": 1,
@@ -71,6 +74,26 @@
           "description": "Audio contract has no input assets: the application always sends {} (contract §1.2). No other fields are accepted."
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "action"
+            ],
+            "properties": {
+              "action": {
+                "const": "health"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "prompt",
+              "parameter"
+            ]
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "policy": {

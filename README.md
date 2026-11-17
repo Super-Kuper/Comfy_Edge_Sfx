@@ -39,13 +39,20 @@ be used at all — see the platform plan §4.3.
 3. **Build and push the image** (≤ 8 GB without weights; basic GPU). The
    Dockerfile builds on the pinned ComfyUI CUDA base — see
    [Dockerfile](Dockerfile). Do not bake weights into the image.
-4. **Create the serverless endpoint** for the `audio` stand: endpoint type
+4. **Publish on RunPod Hub (optional).** The Hub listing metadata is
+   [`.runpod/hub.json`](.runpod/hub.json) (GPU pool `AMPERE_48,ADA_24` — A6000/A40
+   48 GB primary, 4090 cheap fallback; CUDA 13.0–13.4; 40 GB container disk) and
+   the build test is [`.runpod/tests.json`](.runpod/tests.json) — it runs the
+   health action.
+5. **Create the serverless endpoint** for the `audio` stand: endpoint type
    `QUEUE`, **`workers.max = 1`** (batch rule from the plan; a different value is
    stopped with `endpoint_workers_max`), idle timeout 60–120 s, FlashBoot,
    endpoint timeout ≥ `JOB_TIMEOUT_SECONDS` (900 s; recommend 1200 s). One warm
    worker that already loaded the model beats several cold ones.
-5. **Smoke-test** with `contract/examples/request-sfx.json` (the graph is
-   illustrative; the real template lives in the `audio_models` catalog).
+6. **Smoke-test** with the health action (see [Health](#health)); RunPod Hub runs
+   the same request on build. The generation smoke test is
+   `contract/examples/request-sfx.json` (the graph is illustrative; the real
+   template lives in the `audio_models` catalog).
 
 ## Job input / output
 
@@ -74,6 +81,25 @@ success; telemetry facts come from the executed graph, the produced file and the
 pinned manifest. Full details and error codes: [contract](contract/worker-contract.md).
 Examples: [`contract/examples/`](contract/examples/).
 
+## Health
+
+Request (`POST /run`): `{"input": {"action": "health"}}`
+
+```json
+{"status": "ok", "comfyui": "ready", "volume_mounted": true}
+```
+
+- `status`: `ok` (ComfyUI ready and the volume mounted), `starting` (ComfyUI
+  booting, volume mounted; normal transient state) or `degraded` (volume missing
+  and/or ComfyUI unavailable);
+- `comfyui`: `ready`, `booting` or `unavailable` — a short `GET /system_stats`
+  probe;
+- `volume_mounted`: whether `VOLUME_ROOT` exists.
+
+Health never loads a model or runs a graph: it is safe as an endpoint smoke test
+and for diagnostics. RunPod Hub runs it on build
+([`.runpod/tests.json`](.runpod/tests.json)).
+
 ## Environment
 
 Secrets only in the endpoint env; never in the image/repository/logs.
@@ -82,6 +108,7 @@ Secrets only in the endpoint env; never in the image/repository/logs.
 |---|---|---|
 | `COMFY_URL` | `http://127.0.0.1:8188` | Local ComfyUI (loopback only). |
 | `JOB_TIMEOUT_SECONDS` | `900` | Graph run limit inside the handler. |
+| `HEALTH_TIMEOUT_SECONDS` | `10` | Single `GET /system_stats` timeout for the health action. |
 | `MODELS_ROOT` / `MODELS_MANIFEST` | `/runpod-volume/models` / `/opt/audio-worker/models-manifest.txt` | Volume model root and pinned manifest. |
 | `OUTPUT_INLINE_MAX_MB` / `OUTPUT_INLINE_BUDGET_MB` / `OUTPUT_URL_TTL_SECONDS` | `14` / `20` / `86400` | base64 vs presigned `audio_url` thresholds. |
 | `S3_*` (`S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_REGION`, `S3_SECURE`) | — | Storage for large results. |
@@ -95,8 +122,11 @@ python -m pytest            # 0 GPU, no network, no runpod, no ComfyUI
 The suite covers the contract schemas and examples, handler happy path
 (WAV/FLAC facts, seed/model facts from execution), empty/broken output errors,
 "the worker does not choose a model" (strict input schema + graph/telemetry
-facts), duration limits, model manifest parsing/pinning, and storage delivery.
+facts), duration limits, model manifest parsing/pinning, storage delivery, and
+health statuses (volume and ComfyUI probe, no graph).
 Dependencies for a local run: `pytest`, `jsonschema` (see `pyproject.toml`).
+`.runpod/` holds the RunPod Hub listing (`hub.json`) and the build test
+(`tests.json`).
 
 ## Remaining live steps (not in this repository yet)
 

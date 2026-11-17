@@ -55,6 +55,7 @@ class Config:
     comfy_poll_initial_seconds: float = 0.5
     comfy_poll_max_seconds: float = 3.0
     comfy_request_timeout_seconds: float = 60.0
+    health_timeout_seconds: float = 10.0
     volume_root: Path = Path("/runpod-volume")
     models_root: Path = Path("/runpod-volume/models")
     manifest_path: Path = Path("/opt/audio-worker/models-manifest.txt")
@@ -89,6 +90,7 @@ class Config:
             comfy_poll_initial_seconds=_number(source, "COMFY_POLL_INITIAL_SECONDS", 0.5),
             comfy_poll_max_seconds=_number(source, "COMFY_POLL_MAX_SECONDS", 3.0),
             comfy_request_timeout_seconds=_number(source, "COMFY_REQUEST_TIMEOUT_SECONDS", 60.0),
+            health_timeout_seconds=_number(source, "HEALTH_TIMEOUT_SECONDS", 10.0),
             volume_root=volume_root,
             models_root=Path(source.get("MODELS_ROOT", str(volume_root / "models"))),
             manifest_path=Path(

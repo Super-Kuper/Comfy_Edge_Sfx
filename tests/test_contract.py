@@ -44,9 +44,20 @@ def _sfx_input() -> dict:
 # --- Примеры -----------------------------------------------------------------
 
 
-@pytest.mark.parametrize("name", ["request-sfx.json", "request-music.json"])
+@pytest.mark.parametrize("name", ["request-sfx.json", "request-music.json", "health.request.json"])
 def test_input_examples_are_valid(input_validator: Draft202012Validator, name: str) -> None:
     input_validator.validate(load_json(contract_dir() / "examples" / name))
+
+
+def test_health_allows_no_prompt_and_parameter(input_validator: Draft202012Validator) -> None:
+    input_validator.validate({"input": {"action": "health"}})
+
+
+def test_health_response_shape() -> None:
+    payload = load_json(contract_dir() / "examples" / "health.response.json")
+    assert payload["status"] in {"ok", "starting", "degraded"}
+    assert payload["comfyui"] in {"ready", "booting", "unavailable"}
+    assert isinstance(payload["volume_mounted"], bool)
 
 
 @pytest.mark.parametrize("name", ["response.json", "response-url.json"])

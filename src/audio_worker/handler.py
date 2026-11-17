@@ -11,7 +11,7 @@
 Внешние зависимости инъектируются (``build_handler``/``Dependencies``): тесты
 идут без сети, ComfyUI, GPU и runpod.
 
-Ссылки: `contract/worker-contract.md` §1/§2/§4.
+Ссылки: `contract/worker-contract.md` §1/§2/§5.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from .comfy_client import AudioExecution, AudioExecutor, ComfyAudioExecutor
 from .config import Config
 from .contract import validate_input, validate_output
 from .errors import WorkerError
+from .health import health_payload
 from .manifest import ModelFile, ModelManifest, sha256_file
 from .storage import AudioStorage, S3Storage, deliver_audio
 from .telemetry import build_telemetry, graph_model_files, graph_seed
@@ -118,6 +119,10 @@ async def execute(job: Any, deps: Dependencies) -> dict[str, Any]:
     # Схема описывает тело job'а: {"input": ..., "policy": ...}; RunPod добавляет
     # к нему ``id`` (top-level additionalProperties: true).
     validate_input(job, deps.config.contract_dir)
+
+    # Health (contract §3): без графа, модели и телеметрии — только том и ComfyUI.
+    if payload.get("action") == "health":
+        return await health_payload(deps.config, deps.executor)
 
     parameter = payload.get("parameter")
     if not isinstance(parameter, Mapping):  # защита от рассогласования схемы и кода

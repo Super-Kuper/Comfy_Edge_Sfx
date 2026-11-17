@@ -129,7 +129,33 @@ Rules:
 - The contract has no `gpu_cc`/`gpu_class` fields: the audio telemetry is the
   list above; RunPod/provider facts live in the RunPod job status.
 
-## 3. Graph constraints the application must respect
+## 3. Health
+
+Request (`POST /run`):
+
+```json
+{"input": {"action": "health"}}
+```
+
+Response:
+
+```json
+{"status": "ok", "comfyui": "ready", "volume_mounted": true}
+```
+
+- `status`: `ok` (ComfyUI ready and the network volume mounted), `starting`
+  (ComfyUI booting, volume mounted; normal transient state) or `degraded` (volume
+  missing and/or ComfyUI unavailable).
+- `comfyui`: `ready`, `booting` or `unavailable` — a short `GET /system_stats`
+  probe; connection/timeout failures while booting are `booting`, other failures
+  are `unavailable`.
+- `volume_mounted`: whether `VOLUME_ROOT` exists.
+- Health never loads a model or a graph: with `action: health` the `prompt` and
+  `parameter` fields are not required, so it is safe as an endpoint smoke test
+  and for diagnostics. RunPod Hub runs it on build
+  ([`.runpod/tests.json`](../.runpod/tests.json)).
+
+## 4. Graph constraints the application must respect
 
 The worker is model-agnostic: adding an audio model means adding files to the
 volume manifest and a graph template to the `audio_models` catalog, not changing
@@ -150,7 +176,7 @@ Models on the stand: **Stable Audio 3.0 Small SFX** (SFX; Stability AI
 Community License) and **ACE-Step 1.5 turbo AIO** (music; MIT repackaged for
 ComfyUI). MOSS SoundEffect v2 is a catalog reserve and needs no worker change.
 
-## 4. Errors and cancellation
+## 5. Errors and cancellation
 
 Any handler error fails the RunPod job (`FAILED`); error codes are stable
 lowercase identifiers:
@@ -172,7 +198,7 @@ lowercase identifiers:
   [`output.schema.json`](output.schema.json) before returning; a schema
   violation is `output_invalid`.
 
-## 5. Environment
+## 6. Environment
 
 The worker reads its settings from endpoint environment variables. Invalid values
 fail the job with `config_invalid` and the variable name.
@@ -195,7 +221,7 @@ the image: they live on the network volume (`models-manifest.txt`,
 `populate-volume.sh`). ComfyUI itself is booted by the image entrypoint (see
 README "Remaining live steps") and is never exposed.
 
-## 6. Version
+## 7. Version
 
 Current contract version: **`audio-serverless/v1`**. Input and output are
 additive within a minor version. An incompatible change requires a new contract

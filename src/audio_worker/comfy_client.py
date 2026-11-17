@@ -63,6 +63,8 @@ class ComfyAudioExecutor:
         self._request_timeout_seconds = request_timeout_seconds
         self._client: Any = None
         self._client_id = uuid.uuid4().hex
+        # Причина последнего отказа system_stats — для health (booting/unavailable).
+        self.last_error: str | None = None
 
     @classmethod
     def from_config(cls, config: Config) -> "ComfyAudioExecutor":
@@ -72,6 +74,34 @@ class ComfyAudioExecutor:
             poll_max_seconds=config.comfy_poll_max_seconds,
             request_timeout_seconds=config.comfy_request_timeout_seconds,
         )
+
+    async def system_stats(self, timeout: float | None = None) -> dict[str, Any] | None:
+        """Одиночный probe ``GET /system_stats`` для health (contract §3).
+
+        Сбои не поднимаются исключением: ``last_error`` получает класс отказа
+        (``timeout``/``connect`` — ComfyUI ещё стартует, иначе текст ошибки),
+        а health решает, это ``booting`` или ``unavailable``. Успех — ``None``.
+        """
+
+        limit = self._request_timeout_seconds if timeout is None else timeout
+        try:
+            response = await self._http().get("/system_stats", timeout=limit)
+        except Exception as exc:  # noqa: BLE001 - health не должен падать
+            self.last_error = "timeout" if "Timeout" in type(exc).__name__ else "connect"
+            return None
+        if response.status_code >= 400:
+            self.last_error = f"HTTP {response.status_code}"
+            return None
+        try:
+            payload = response.json()
+        except ValueError:
+            self.last_error = "ответ /system_stats — не JSON"
+            return None
+        if not isinstance(payload, dict):
+            self.last_error = "ответ /system_stats — не объект"
+            return None
+        self.last_error = None
+        return payload
 
     async def execute(self, graph: Mapping[str, Any], timeout_seconds: float) -> AudioExecution:
         started = time.monotonic()
