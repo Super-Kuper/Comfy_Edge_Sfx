@@ -4,6 +4,25 @@
 [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии —
 [SemVer](https://semver.org/lang/ru/).
 
+## [0.2.1] — 2026-11-17
+
+Исправлен Hub-билд: `allowedCudaVersions` ссылался на версии CUDA, которых нет
+на машинах RunPod.
+
+### Исправлено
+
+- **Причина:** RunPod Hub поднимает test pod по `.runpod/tests.json`; если
+  `allowedCudaVersions` не совпадает ни с одной машиной, все попытки падают с
+  `All returned supply constraints` (в логе TTS — L4/3090/A5000 и
+  `12.8, 12.9, 13.0`). Каталог RunPod (`GET /v2/catalog/gpus`) показывает
+  реальные host-CUDA: `13.2`, `13.0`, `12.6`, `12.4`; `12.8`, `12.9`, `13.1`,
+  `13.3`, `13.4` отсутствуют, а у пула `AMPERE_24` нет стока GPU L4.
+- **`audio`:** `13.0`–`13.4` → `13.2`, `13.0` (образ собран на CUDA 13.0, хост
+  обязан быть ≥ 13.0); пулы `AMPERE_48,AMPERE_24,ADA_24` — A6000/3090/4090 с
+  реальным стоком; test pod — NVIDIA RTX A6000 с CUDA 13.2.
+- Версия `0.2.1`; контракт `audio-serverless/v1`, обработчик, тесты и манифест
+  не менялись. Живой entrypoint — прежний `TODO(live)`.
+
 ## [0.2.0] — 2026-11-17
 
 Релиз для публикации на RunPod Hub: метаданные листинга и build-тест, плюс
