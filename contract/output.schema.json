@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/audio-serverless/output.schema.json",
+  "title": "Audio serverless worker output (audio-serverless/v1)",
+  "description": "Result of one SFX/music/layer job: the produced audio (exactly one of audio_b64 or audio_url) and execution-fact telemetry. Expected values from input.parameter are never substituted.",
+  "type": "object",
+  "required": [
+    "telemetry"
+  ],
+  "properties": {
+    "audio_b64": {
+      "type": "string",
+      "minLength": 1,
+      "contentEncoding": "base64",
+      "description": "Base64-encoded audio bytes (WAV or FLAC) for results within OUTPUT_INLINE_MAX_MB / OUTPUT_INLINE_BUDGET_MB."
+    },
+    "audio_url": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "Presigned HTTP(S) URL for results uploaded to S3-compatible storage (S3_*, OUTPUT_URL_TTL_SECONDS)."
+    },
+    "telemetry": {
+      "type": "object",
+      "description": "Execution-fact telemetry: measured by the worker from the executed graph, the produced audio bytes and the pinned model manifest. input.parameter values are never substituted.",
+      "required": [
+        "engine_version",
+        "model_hash",
+        "seed",
+        "duration_seconds",
+        "sample_rate",
+        "channels",
+        "gpu_seconds",
+        "license"
+      ],
+      "properties": {
+        "engine_version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pinned model/engine version of the executed model file (models-manifest.txt version column), e.g. stable-audio-3-small-sfx@2026-05."
+        },
+        "model_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "Measured sha256 of the executed model weight file (loader node -> file name -> volume file), prefixed with sha256:."
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seed read from the executed sampler graph (KSampler.seed, RandomNoise.noise_seed, ...)."
+        },
+        "duration_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Fact duration of the produced audio read from its header (WAV/FLAC), not the requested duration."
+        },
+        "sample_rate": {
+          "type": "integer",
+          "minimum": 4000,
+          "description": "Fact sample rate of the produced audio, from its header."
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Fact channel count of the produced audio, from its header."
+        },
+        "gpu_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Measured wall-clock seconds of the graph execution (submit -> history completion -> output fetch)."
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "description": "License identifier of the executed model file, from the pinned manifest row (e.g. Stability-AI-Community, MIT, Apache-2.0)."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "audio_b64"
+      ]
+    },
+    {
+      "required": [
+        "audio_url"
+      ]
+    }
+  ],
+  "not": {
+    "required": [
+      "audio_b64",
+      "audio_url"
+    ]
+  },
+  "additionalProperties": false
+}

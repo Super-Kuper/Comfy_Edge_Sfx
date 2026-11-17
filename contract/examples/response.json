@@ -1,0 +1,13 @@
+{
+  "audio_b64": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA=",
+  "telemetry": {
+    "engine_version": "stable-audio-3-small-sfx@2026-05",
+    "model_hash": "sha256:ed9cf1b6172f1a8c2921a9560c21109ff3239524563ced9dce6dcdef41e2f515",
+    "seed": 20261116,
+    "duration_seconds": 2.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "gpu_seconds": 6.4,
+    "license": "Stability-AI-Community"
+  }
+}

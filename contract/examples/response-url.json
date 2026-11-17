@@ -1,0 +1,13 @@
+{
+  "audio_url": "https://storage.example/audio/music-noir-01.wav?X-Amz-Signature=example",
+  "telemetry": {
+    "engine_version": "ace-step-1.5@2026-04",
+    "model_hash": "sha256:67b0f43aa5c51c840bd0228e6a935d8ff416ec87e5df2fc0637da17a561252bc",
+    "seed": 20261117,
+    "duration_seconds": 60.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "gpu_seconds": 22.5,
+    "license": "MIT"
+  }
+}

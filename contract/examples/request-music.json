@@ -1,0 +1,22 @@
+{
+  "input": {
+    "prompt": {
+      "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "ace_step_1.5_turbo_aio.safetensors"}},
+      "2": {"class_type": "TextEncodeAceStepAudio1.5", "inputs": {"clip": ["1", 1], "tags": "noir, smoky jazz, restrained tension, 60 bpm, upright bass, brushed drums, instrumental", "lyrics": ""}},
+      "3": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["2", 0]}},
+      "4": {"class_type": "EmptyAceStep1.5LatentAudio", "inputs": {"seconds": 60, "batch_size": 1}},
+      "5": {"class_type": "KSampler", "inputs": {"model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0], "latent_image": ["4", 0], "seed": 20261117, "steps": 8, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}},
+      "6": {"class_type": "VAEDecodeAudio", "inputs": {"samples": ["5", 0], "vae": ["1", 2]}},
+      "7": {"class_type": "SaveAudioAdvanced", "inputs": {"audio": ["6", 0], "filename_prefix": "audio/music", "format": "wav", "quality": "V0"}}
+    },
+    "parameter": {
+      "kind": "music",
+      "duration_seconds": 60.0,
+      "seed": 20261117,
+      "prompt_hash": "a45e09080e6b161d86776afc82e0ce6dbf169bfd2292edf04ce2e2187fe804d4",
+      "model_slug": "ace-step-1-5"
+    },
+    "assets": {}
+  },
+  "policy": {"executionTimeout": 600000, "ttl": 3600000}
+}

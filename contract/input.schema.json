@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/audio-serverless/input.schema.json",
+  "title": "Audio serverless worker input (audio-serverless/v1)",
+  "description": "RunPod serverless input: a prepared ComfyUI API audio graph plus the application parameter snapshot. The worker executes the graph unchanged and never chooses a model.",
+  "type": "object",
+  "required": [
+    "input"
+  ],
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": [
+        "prompt",
+        "parameter"
+      ],
+      "properties": {
+        "prompt": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Prepared ComfyUI API graph (node id -> {class_type, inputs}) built by the application from audio_models.graph.template. The worker submits it unchanged; it never builds, edits or selects a model."
+        },
+        "parameter": {
+          "type": "object",
+          "required": [
+            "kind",
+            "duration_seconds",
+            "seed",
+            "prompt_hash",
+            "model_slug"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "sfx",
+                "music",
+                "layer"
+              ],
+              "description": "Request kind. Duration limits (contract §1.1): sfx/layer <= 30 s, music <= 90 s."
+            },
+            "duration_seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Snapshot of the requested duration; tracing/limit data only. The output duration is measured from the produced file."
+            },
+            "seed": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "description": "Snapshot of the seed rendered into the graph; tracing data only. The reported seed is read from the executed sampler node."
+            },
+            "prompt_hash": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Application hash of the prompt/template snapshot; tracing data only."
+            },
+            "model_slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Application catalog slug snapshot; tracing data only. The worker does not choose a model: the executed model is whatever the submitted graph loads and is reported from execution."
+            }
+          },
+          "additionalProperties": true
+        },
+        "assets": {
+          "type": "object",
+          "maxProperties": 0,
+          "description": "Audio contract has no input assets: the application always sends {} (contract §1.2). No other fields are accepted."
+        }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "description": "Optional RunPod policy (executionTimeout/ttl). The worker does not read it; RunPod applies it before the handler runs.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
