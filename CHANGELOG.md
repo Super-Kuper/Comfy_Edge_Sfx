@@ -4,6 +4,24 @@
 [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии —
 [SemVer](https://semver.org/lang/ru/).
 
+## [0.2.3] — 2026-11-17
+
+Hub-билд: контейнер падал на `python: not found`.
+
+### Исправлено
+
+- **Причина:** test pod поднялся на RTX 4090, но контейнер завершился с
+  `sh: 1: python: not found`: в pod-базе `runpod/comfyui` (CUDA 13.0) имени
+  `python` в PATH нет — ComfyUI живёт в `/workspace/runpod-slim/.venv-cu130`,
+  venv не активирован, а дефолтный `ENTRYPOINT /start.sh` заменён нашим.
+  TTS-образ на `python:3.12-slim` содержит `python`, поэтому собирался.
+- **`audio`:** в Dockerfile `python` → `python3` (симлинк в `/usr/local/bin` на
+  тот же интерпретатор, куда поставлены зависимости воркера) + smoke
+  `python -c "import audio_worker.handler"` на этапе сборки. ENTRYPOINT
+  `python /opt/audio-worker/handler.py` теперь резолвится, и Hub test pod
+  может запустить handler.
+- Версия `0.2.3`; контракт, обработчик, тесты и манифест не менялись.
+
 ## [0.2.2] — 2026-11-17
 
 Hub-билд: test pod переведён на 24-ГБ класс GPU.
