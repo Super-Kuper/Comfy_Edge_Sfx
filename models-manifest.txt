@@ -1,0 +1,48 @@
+# Model manifest for the video_gen audio serverless worker (SFX / music).
+#
+# Format (tab-separated): <subdir>\t<filename>\t<URL>\t<sha256>\t<version>\t<license>
+# Consumed by populate-volume.sh at worker boot (or by runpod.provision on the
+# service side): files land in /runpod-volume/models/<subdir>/<filename>, which
+# is exactly the layout extra_model_paths.yaml exposes to ComfyUI.
+#
+# Every URL is pinned to an immutable Hugging Face commit revision and every file
+# has a pinned sha256 (the LFS oid). `main` is forbidden: populate-volume.sh
+# rejects a URL without /resolve/<40-hex-commit>/ and fails with a readable error,
+# so a non-pinned manifest never silently downloads moving weights.
+#
+# Version is the execution-fact value the worker reports as telemetry.engine_version;
+# license is the value it reports as telemetry.license. Keep both in sync with the
+# audio_models catalog snapshot on the service side.
+#
+# The worker executes a prepared ComfyUI API graph built by the service from
+# audio_models.graph.template. The graph must reference exactly these file names:
+#
+#   Stable Audio 3.0 Small SFX (SFX, ~2.27 GB + text encoder ~1.19 GB):
+#     checkpoints/stable_audio_3_small_sfx.safetensors
+#     text_encoders/t5gemma_b_b_ul2.safetensors
+#     license: Stability AI Community License (commercial outputs < $1M/year revenue,
+#     > $1M requires Enterprise) — https://stability.ai/community-license-agreement
+#
+#   ACE-Step 1.5 turbo AIO (music, ~10.0 GB single checkpoint):
+#     checkpoints/ace_step_1.5_turbo_aio.safetensors
+#     license: MIT (ACE-Step/Ace-Step1.5 original weights; ComfyUI repack)
+#     — https://github.com/ace-step/ACE-Step-1.5
+#
+# Volume budget: ~13.5 GB for the pinned set; attach at least 25 GB (ComfyUI
+# outputs/temp + headroom for the MOSS reserve or Stable Audio 3 music later).
+# Weights are never baked into the image or committed to git (see .gitignore).
+#
+# To add a model: add its files with pinned /resolve/<commit>/ URLs and sha256,
+# run populate-volume.sh, then add the graph template to the `audio_models`
+# catalog in video_gen. MOSS SoundEffect v2 is a catalog reserve and uses the same
+# contract (no worker change) when its files are added here.
+
+# ── Stable Audio 3.0 Small SFX (ComfyUI, Stability AI Community License) ──────
+# Repo: https://huggingface.co/Comfy-Org/stable-audio-3 @ 75aad883
+checkpoints	stable_audio_3_small_sfx.safetensors	https://huggingface.co/Comfy-Org/stable-audio-3/resolve/75aad8836271cb5a5123fb58304fae5d3bb4b0f9/checkpoints/stable_audio_3_small_sfx.safetensors	ed9cf1b6172f1a8c2921a9560c21109ff3239524563ced9dce6dcdef41e2f515	stable-audio-3-small-sfx@2026-05	Stability-AI-Community
+text_encoders	t5gemma_b_b_ul2.safetensors	https://huggingface.co/Comfy-Org/stable-audio-3/resolve/75aad8836271cb5a5123fb58304fae5d3bb4b0f9/text_encoders/t5gemma_b_b_ul2.safetensors	1e1eba25be8872edb0d3c6335c6658fd6388e7b14b60da6e454e404cfcd8150e	stable-audio-3-small-sfx@2026-05	Stability-AI-Community
+
+# ── ACE-Step 1.5 turbo AIO (ComfyUI repack, MIT) ──────────────────────────────
+# Repo: https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files @ 371bb168
+# Original weights: https://huggingface.co/ACE-Step/Ace-Step1.5 (MIT)
+checkpoints	ace_step_1.5_turbo_aio.safetensors	https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/371bb1680f8c88d8c1083f6ffb6330d3d55bff76/checkpoints/ace_step_1.5_turbo_aio.safetensors	67b0f43aa5c51c840bd0228e6a935d8ff416ec87e5df2fc0637da17a561252bc	ace-step-1.5@2026-04	MIT
