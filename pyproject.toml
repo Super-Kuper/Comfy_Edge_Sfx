@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audio-serverless-worker"
+version = "0.1.0"
+description = "RunPod serverless worker for ComfyUI audio generation (Stable Audio 3 Small SFX, ACE-Step 1.5) — contract audio-serverless/v1"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "video_gen audio serverless worker" }]
+keywords = ["runpod", "serverless", "comfyui", "audio", "sfx", "music", "stable-audio", "ace-step"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+]
+
+# The worker executes a prepared ComfyUI API graph and returns
+# `{audio_b64|audio_url, telemetry}` (contract/worker-contract.md).
+# httpx/runpod are used by the live executor/entrypoint; boto3 only for large
+# results. Tests do not need any of them (executor/storage are injected).
+dependencies = [
+    "httpx>=0.27,<0.29",
+    "jsonschema>=4.21",
+    "runpod==2.2.1",
+    "boto3>=1.35",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
