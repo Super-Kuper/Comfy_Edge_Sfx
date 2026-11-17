@@ -9,12 +9,11 @@
     }
   ],
   "config": {
-    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuTypeId": "NVIDIA RTX PRO 4500 Blackwell",
     "gpuCount": 1,
     "env": [],
     "allowedCudaVersions": [
-      "13.2",
-      "13.0"
+      "13.2"
     ]
   }
 }

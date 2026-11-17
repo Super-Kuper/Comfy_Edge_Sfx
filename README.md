@@ -51,10 +51,12 @@ be used at all — see the platform plan §4.3.
    versions present in the RunPod inventory are listed, speculative `13.1`/
    `13.3`/`13.4` never matched a machine; 40 GB container disk) and
    the build test is [`.runpod/tests.json`](.runpod/tests.json) — it runs the
-   health action on the 24 GB class (`NVIDIA GeForce RTX 4090`, CUDA 13.2): the
-   48 GB class (`RTX A6000` → `A40` → `L40`) is low-stock, so its fallback chain
-   is not reliable for the build test. The health action does not initialize
-   CUDA, so the 24 GB test pod verifies the handler/contract wiring.
+   health action on `NVIDIA RTX PRO 4500 Blackwell` (32 GB, CUDA 13.2). The
+   24 GB class (`RTX 4090`/`A6000`/`3090`) had no scheduler capacity at build
+   time even though the CUDA filter was correct; the health action does not
+   initialize CUDA, so the build test only verifies the handler/contract
+   wiring. GPU pools `ADA_48_PRO`/`BLACKWELL_32` (L40S / RTX PRO 4500) are
+   included in the listing so deployments can land on pools with real stock.
 5. **Create the serverless endpoint** for the `audio` stand: endpoint type
    `QUEUE`, **`workers.max = 1`** (batch rule from the plan; a different value is
    stopped with `endpoint_workers_max`), idle timeout 60–120 s, FlashBoot,
