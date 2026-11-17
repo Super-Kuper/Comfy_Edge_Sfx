@@ -31,11 +31,13 @@ be used at all — see the platform plan §4.3.
 1. **Storage first.** Create a network volume (≥ 25 GB) in a datacenter that
    offers 24 GB+ GPUs (L4, A5000, RTX A6000/A40, 4090). The pinned set is
    ~13.5 GB; ComfyUI outputs/temp and future models need headroom.
-2. **Populate the volume before traffic.** Run
-   [`populate-volume.sh`](populate-volume.sh) from a CPU pod with
-   `MODELS_ROOT=/runpod-volume/models` (or set `VOLUME_AUTOPOPULATE=true` in the
-   image entrypoint once it lands). The script refuses non-pinned URLs and
-   verifies every sha256; a mismatch fails before the GPU is started.
+2. **Volume auto-populates on first boot.** `docker/entrypoint.sh` runs
+   [`populate-volume.sh`](populate-volume.sh) with
+   `VOLUME_AUTOPOPULATE=true` (default): missing files from
+   `models-manifest.txt` are downloaded to `/runpod-volume/models` and every
+   sha256 is verified; unpinned URLs/`main` are refused before GPU work. Set
+   `VOLUME_AUTOPOPULATE=false` to prepare the volume manually from a CPU pod
+   (`MODELS_ROOT=/runpod-volume/models ./populate-volume.sh`).
 3. **Build and push the image** (≤ 8 GB without weights; basic GPU). The
    Dockerfile builds on the pinned ComfyUI CUDA base — see
    [Dockerfile](Dockerfile). Do not bake weights into the image. The base is a
@@ -144,21 +146,16 @@ Dependencies for a local run: `pytest`, `jsonschema` (see `pyproject.toml`).
 
 ## Remaining live steps (not in this repository yet)
 
-1. **Image entrypoint:** boot ComfyUI from the baked base (materialize the
-   layout, `extra_model_paths.yaml` → `${MODELS_ROOT}`, wait for
-   `/system_stats`) before the RunPod handler, plus populate-volume on boot.
-   Template: `image-serverless/docker/entrypoint.sh`, `scripts/wait-comfy.sh`,
-   `populate-volume.sh` in the sibling worker repository. Without this the image
-   builds but a live endpoint fails with `comfy_timeout`.
-2. **Verify the audio ComfyUI stack on the stand** (`TODO(live)` in
+1. **Verify the audio ComfyUI stack on the stand** (`TODO(live)` in
    `src/audio_worker/comfy_client.py` and `audio.py`): Stable Audio 3 / ACE-Step
    node packages and their exact `class_type`s, the `audio` key in
    `/history.outputs`, save format (contract requires WAV; FLAC is parsed),
    `/interrupt` on cancellation, and cold-start time vs `policy.executionTimeout`.
-3. **Graph templates** in the service `audio_models` catalog (`graph.template`,
-   revision/hash) for SA3 Small SFX and ACE-Step 1.5, plus the catalog
-   `model_files[]` names exactly matching this manifest.
-4. **Measure** warm/cold start, GPU seconds per SFX/music, and the real
+   Entrypoint (`docker/entrypoint.sh`) and ComfyUI boot from the baked base are
+   implemented in this repository but **not yet published/verified on the stand**.
+2. **Catalog `model_files[]`** names exactly matching this manifest (graph
+   templates/revision/hash already in the service seeds).
+3. **Measure** warm/cold start, GPU seconds per SFX/music, and the real
    base64/URL threshold on the stand; record `cost.gpu_seconds`.
-5. **Pilot go/no-go** on 18 catalog SFX names before the stand is enabled for
+4. **Pilot go/no-go** on 18 catalog SFX names before the stand is enabled for
    authors (plan §11).

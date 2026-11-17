@@ -4,6 +4,36 @@
 [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии —
 [SemVer](https://semver.org/lang/ru/).
 
+## [0.2.6] — 2026-11-17
+
+Живой entrypoint: ComfyUI, авто-популяция тома, запуск handler.
+
+### Добавлено
+
+- **`docker/entrypoint.sh`:** pinned-веса на том (`VOLUME_AUTOPOPULATE=true` по
+  умолчанию, `populate-volume.sh` + sha256 из манифеста) → `extra_model_paths.yaml`
+  → ComfyUI на `127.0.0.1:8188` → ожидание `/system_stats`
+  (`COMFY_BOOT_TIMEOUT_SECONDS`, по умолчанию 600) → handler; SIGTERM/SIGINT
+  пробрасываются handler'у, ComfyUI гасится при выходе. Ошибка автоскачивания
+  не валит контейнер: health доступен, job падает видимым `model_file_missing`.
+- **`docker/install-comfy-packages.sh`:** материализация baked-раскладки ComfyUI
+  v0.44.0 и venv на этапе сборки (как в `image-serverless`), проверка core-нод
+  audio.
+- **`scripts/wait-comfy.sh`**, **`docker/extra_model_paths.yaml`** (checkpoints,
+  text_encoders и общие каталоги тома).
+- Hub env: `VOLUME_AUTOPOPULATE` (default `true`).
+
+### Изменено
+
+- Dockerfile: ENV ComfyUI/тома, `rsync`/`git`, `ENTRYPOINT` —
+  `docker/entrypoint.sh` (прежний `python handler.py` убран).
+
+### Проверка
+
+`pytest` — 89 passed; `shellcheck` — только прежние SC2034 в
+`populate-volume.sh`; stub-сборка на `python:3.12-slim` зелёная. Живой прогон на
+стенде не выполнялся: нужна пересборка/публикация образа и GPU.
+
 ## [0.2.5] — 2026-11-17
 
 Hub-билд: test pod на GPU с фактическим стоком (H100 80GB).
