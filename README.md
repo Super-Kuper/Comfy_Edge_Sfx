@@ -38,7 +38,12 @@ be used at all — see the platform plan §4.3.
    verifies every sha256; a mismatch fails before the GPU is started.
 3. **Build and push the image** (≤ 8 GB without weights; basic GPU). The
    Dockerfile builds on the pinned ComfyUI CUDA base — see
-   [Dockerfile](Dockerfile). Do not bake weights into the image.
+   [Dockerfile](Dockerfile). Do not bake weights into the image. The base is a
+   pod image with `ENTRYPOINT /start.sh` and no `python` in PATH (ComfyUI lives
+   in `/workspace/runpod-slim/.venv-cu130`); the worker layer symlinks `python`
+   to the base `python3` (the interpreter the worker deps are installed into)
+   and smoke-imports the handler at build time, so `python handler.py` works in
+   the Hub test pod and on a live endpoint.
 4. **Publish on RunPod Hub (optional).** The Hub listing metadata is
    [`.runpod/hub.json`](.runpod/hub.json) (GPU pools `AMPERE_48,AMPERE_24,ADA_24` —
    A6000/A40 48 GB primary, 3090/4090 cheap fallback; host CUDA `13.2`/`13.0` —

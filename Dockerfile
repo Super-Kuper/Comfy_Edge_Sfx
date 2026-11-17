@@ -24,7 +24,7 @@ ARG BASE_IMAGE=runpod/comfyui:2.2.0-comfyuiv0.44.0-cuda13.0@sha256:adccffa4dc215
 
 FROM ${BASE_IMAGE}
 
-ARG AUDIO_WORKER_VERSION=0.2.2
+ARG AUDIO_WORKER_VERSION=0.2.3
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -51,6 +51,20 @@ RUN set -eux; \
     "${py}" -m pip install --no-cache-dir "runpod==2.2.1" "httpx>=0.27,<0.29" "jsonschema>=4.21" "boto3>=1.35"; \
     "${py}" -c "import boto3, httpx, jsonschema, runpod; print('worker deps ok')"
 
+# Hub test pod и RunPod runtime запускают команду контейнера через shell, а в
+# pod-базе runpod/comfyui имени `python` в PATH нет: ComfyUI живёт в
+# /workspace/runpod-slim/.venv-cu130 и venv не активирован (есть только
+# python3). Симлинк на тот же интерпретатор, куда поставлены зависимости
+# воркера, делает ENTRYPOINT `python handler.py` резолвимым; на python-slim
+# (stub-сборка) `python` уже есть и шаг пропускается.
+RUN set -eux; \
+    if ! command -v python >/dev/null 2>&1; then \
+        py="$(command -v python3 || command -v python)"; \
+        echo "python -> ${py}"; \
+        ln -sfn "${py}" /usr/local/bin/python; \
+    fi; \
+    python -V
+
 WORKDIR /opt/audio-worker
 
 COPY src/ /opt/audio-worker/src/
@@ -60,6 +74,10 @@ COPY models-manifest.txt /opt/audio-worker/models-manifest.txt
 COPY populate-volume.sh /opt/audio-worker/populate-volume.sh
 
 RUN chmod 0755 /opt/audio-worker/populate-volume.sh
+
+# Структурная проверка: пакет и handler импортируются тем же `python`, которым
+# запускается контейнер (ловит отсутствие интерпретатора/зависимостей до Hub).
+RUN python -c "import audio_worker.handler; print('audio_worker.handler import ok')"
 
 # TODO(live): replace with docker/entrypoint.sh that
 #   1. verifies/updates the pinned weights on the volume (populate-volume.sh
